@@ -1,0 +1,21 @@
+#!/bin/bash
+
+identifier=`basename $0`
+tmpFile=`mktemp`
+tmpID=`basename $tmpFile`
+rm $tmpFile
+identifier=${USER}__${identifier}__${tmpID}
+
+source scripts/delete_temp_files
+
+tmpDir=/tmp/$identifier
+mkdir -p $tmpDir
+
+for i in {1..15}
+do
+  filePath=/tmp/${identifier}__${i}
+  touch $filePath
+  eval tmpFile${i}=$filePath
+done
+
+trap 'source scripts/delete_temp_files' TERM INT EXIT
