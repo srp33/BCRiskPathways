@@ -50,6 +50,6 @@ Raw microarray files can be downloaded from GEO (GSE47682). Place them in the "r
 
 For the gene expression analyses, you may get slightly different results depending on version of scipy/numpy you use. (We used scipy version 0.8.0 and numpy version 1.5.1.) However, the downstream results should be similar.
 
-We identified genes whose expresson was correlated with demographic / clinical variables and excluded those (described in manuscript). The data file containing these variables is not here. In addition, the exome-sequencing data are not publicly available. Please contact the authors for access to these data.
+We identified genes whose expresson was correlated with demographic / clinical variables and excluded those (described in manuscript). The data file containing these variables is not here. In addition, the exome-sequencing data require security approvals for access. Please contact the authors for access to these data.
 
 Please secontact stephen_piccolo [at] byu [dot] edu with any questions.
