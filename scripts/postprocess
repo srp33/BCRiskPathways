@@ -76,20 +76,18 @@ function calculateMetrics {
   chmod 777 $tmpFile1
   parallel --max-procs 50 -a $tmpFile1
 
-  for f in /home/spiccolo/BCSP/ML-Flex_Results/24vs35/Pathways/AllTesting/Predictions/*
+  for f in ML-Flex_Results/24vs35/Pathways/AllTesting/Predictions/*
   do
     echo $f
     out24=${f/Predictions/ControlTest24}
-    out35=${f/Predictions/ControlTest35}
 
-    mkdir -p $(dirname $out24) $(dirname $out35)
+    mkdir -p $(dirname $out24)
 
     Rscript --vanilla code/TestControls.R $f clinical/family.txt 2 4 $out24
-    Rscript --vanilla code/TestControls.R $f clinical/family.txt 3 5 $out35
   done
 
-  python code/CombineScalarValues.py "/home/spiccolo/BCSP/ML-Flex_Results/24vs35/Pathways/AllTesting/ControlTest24/*" $tmpFile1
-  python code/SortFileByExpression.py $tmpFile1 "float(x[1])" forward 0 /home/spiccolo/BCSP/ML-Flex_Results/24vs35/Pathways/AllTesting/ControlTest24.txt
+  python code/CombineScalarValues.py "ML-Flex_Results/24vs35/Pathways/AllTesting/ControlTest24/*" $tmpFile1
+  python code/SortFileByExpression.py $tmpFile1 "float(x[1])" forward 0 ML-Flex_Results/24vs35/Pathways/AllTesting/ControlTest24.txt
 }
 
 calculateMetrics
