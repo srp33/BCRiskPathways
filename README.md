@@ -52,4 +52,4 @@ For the gene expression analyses, you may get slightly different results dependi
 
 We identified genes whose expresson was correlated with demographic / clinical variables and excluded those (described in manuscript). The data file containing these variables is not here. In addition, the exome-sequencing data require security approvals for access. Please contact the authors for access to these data.
 
-Please secontact stephen_piccolo [at] byu [dot] edu with any questions.
+Please contact stephen_piccolo [at] byu [dot] edu with any questions.
