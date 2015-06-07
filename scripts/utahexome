@@ -11,6 +11,10 @@ gmtFiles=library/all_pathways.gmt
 entrezGenesFile=$outputDir/EntrezGenes.txt
 
 source scripts/create_temp_files
+#scripts/exome2/calculate_mutfreq_stats $outputDir/Variants_Minus_TCGA_Genes.txt $entrezGenesFile $entrezGeneSymbolsFile $gmtFiles $outputDir/Samples.Family3.txt $outputDir/Samples.Family5.txt BRCAXCancer BRCA12Cancer $outputDir/Gene.MutFreq.Stats.Families3vs5.txt $outputDir/Pathway.MutFreq.Stats.Families3vs5.txt False
+#scripts/exome2/calculate_mutfreq_stats $outputDir/Variants_Minus_TCGA_Genes.txt $entrezGenesFile $entrezGeneSymbolsFile $gmtFiles $outputDir/Samples.Family5.txt $outputDir/Samples.Family3.txt BRCA12Cancer BRCAXCancer $outputDir/Gene.MutFreq.Stats.Families5vs3.txt $outputDir/Pathway.MutFreq.Stats.Families5vs3.txt False
+ls -al $outputDir/Gene.MutFreq.Stats.Families?vs?.txt $outputDir/Pathway.MutFreq.Stats.Families?vs?.txt
+exit
 
 scripts/exome/parse_meta_files
 python2 code/SelectColumns.py $entrezGenePositionsFile 0 $entrezGenesFile
@@ -123,7 +127,7 @@ python2 code/Uniquify.py $tmpFile3
 python2 code/FilterFileByColumnValues.py $outputDir/Variants.txt 6 $tmpFile3 1 $outputDir/Variants_Minus_TCGA_Genes.txt
 
 scripts/exome2/calculate_mutfreq_stats $outputDir/Variants_Minus_TCGA_Genes.txt $entrezGenesFile $entrezGeneSymbolsFile $gmtFiles $controlSamplesFile $cancerSamplesFile UtahControl UtahCancer $outputDir/Gene.MutFreq.Stats.txt $outputDir/Pathway.MutFreq.Stats.txt False
-scripts/exome2/calculate_mutfreq_stats $outputDir/Variants_Minus_TCGA_Genes.txt $entrezGenesFile $entrezGeneSymbolsFile $gmtFiles $outputDir/Samples.Family5.txt $outputDir/Samples.Family4.txt UtahBRCACancer UtahBRCAXCancer $outputDir/Gene.MutFreq.Stats.Families5vs4.txt $outputDir/Pathway.MutFreq.Stats.Families5vs4.txt False
+scripts/exome2/calculate_mutfreq_stats $outputDir/Variants_Minus_TCGA_Genes.txt $entrezGenesFile $entrezGeneSymbolsFile $gmtFiles $outputDir/Samples.Family3.txt $outputDir/Samples.Family5.txt UtahBRCAControl UtahBRCACancer $outputDir/Gene.MutFreq.Stats.Families3vs5.txt $outputDir/Pathway.MutFreq.Stats.Families3vs5.txt False
 
 ## Number of genes and pathways with at least one variant after gene-level filtering
 python2 code/PrintVariantStats.py $outputDir/Variants_Minus_TCGA_Genes.txt | tee $outputDir/VariantStats_Minus_TCGA_Genes.txt

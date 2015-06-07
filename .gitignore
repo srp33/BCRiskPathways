@@ -1,4 +1,6 @@
 Archive
+*.pyc
+code/*.pyc
 *git
 secure
 ML-Flex2/Internals
