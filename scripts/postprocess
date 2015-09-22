@@ -6,15 +6,15 @@ source scripts/create_temp_files
 # Parse "pathway" results
 ###############################################################
 
-for comparison in 24vs35 0124vs35
-do
-  for pathway in `cat library/all_pathways.txt`
-  do
-    echo scripts/postprocess_parsePredictionFiles Pathways $pathway $comparison >> $tmpFile1
-  done
-done
-chmod 777 $tmpFile1
-parallel --max-procs 50 -a $tmpFile1
+#for comparison in 24vs35 0124vs35
+#do
+#  for pathway in `cat library/all_pathways.txt`
+#  do
+#    echo scripts/postprocess_parsePredictionFiles Pathways $pathway $comparison >> $tmpFile1
+#  done
+#done
+#chmod 777 $tmpFile1
+#parallel --max-procs 50 -a $tmpFile1
 
 function parseLoocvPredictions {
   dataSet=$1
@@ -38,24 +38,24 @@ function parseLoocvPredictions {
   done
 }
 
-parseLoocvPredictions Visvader
-parseLoocvPredictions Bellacosa
+#parseLoocvPredictions Visvader
+#parseLoocvPredictions Bellacosa
 
 #################################################################
 # Build prediction matrices
 #################################################################
 
-for descriptionDir in ML-Flex_Results/24vs35
-do
-  cohortDir=$descriptionDir/Pathways/All/Predictions
-
-  outFile=${cohortDir//\//__}__Predicted__Probabilities.txt
-  outFile=${outFile/All__Predictions__/}
-  outFile=${outFile/__/\/}
-  outFile=${outFile//__/_}
-
-  python code/BuildPredictionMatrix.py "$cohortDir/*" $outFile
-done
+#for descriptionDir in ML-Flex_Results/24vs35
+#do
+#  cohortDir=$descriptionDir/Pathways/All/Predictions
+#
+#  outFile=${cohortDir//\//__}__Predicted__Probabilities.txt
+#  outFile=${outFile/All__Predictions__/}
+#  outFile=${outFile/__/\/}
+#  outFile=${outFile//__/_}
+#
+#  python code/BuildPredictionMatrix.py "$cohortDir/*" $outFile
+#done
 
 #################################################################
 # Calculate prediction metrics
@@ -90,7 +90,7 @@ function calculateMetrics {
   python code/SortFileByExpression.py $tmpFile1 "float(x[1])" forward 0 ML-Flex_Results/24vs35/Pathways/AllTesting/ControlTest24.txt
 }
 
-calculateMetrics
+#calculateMetrics
 
 function combineMetrics {
   for metric in AUCs PermutedAUCs
@@ -108,7 +108,7 @@ function combineMetrics {
   done
 }
 
-combineMetrics
+#combineMetrics
 
 function summarizeMetrics {
   for metric in AUCs PermutedAUCs
@@ -136,10 +136,11 @@ function summarizeMetrics {
 
   Rscript --vanilla code/AddCombinedP.R $tmpFile3 7,8,17 TRUE $tmpFile1
   Rscript --vanilla code/AddCombinedP.R $tmpFile1 7,8,17,11,12 TRUE $tmpFile2
-  Rscript --vanilla code/AddCombinedP.R $tmpFile2 11,12 TRUE Results/Overall_Pathway_Summary.txt
+  Results/Overall_Pathway_Summary.txt
 }
 
 summarizeMetrics
+exit
 
 function identifySelectedGenes2 {
   selectedGenesDir=ML-Flex_Results/24vs35/Pathways/UtahTraining/SelectedGenes
