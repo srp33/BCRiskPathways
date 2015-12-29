@@ -8,7 +8,7 @@ comparison=$3
 
 echo $1 -- $2 -- $3
 
-testInFile1="ML-Flex/Output/utahontario1_${groupDescription}_${comparison}_Experiment/Results/utahontario1.batch.${subsetDescription}/weka_svm_weights/r_svm_rbf/Predictions.txt"
+testInFile1="ML-Flex2/Output/utahontario1_${groupDescription}_${comparison}_Experiment/Results/utahontario1.batch.${subsetDescription}/weka_svm_weights/r_svm_rbf/Predictions.txt"
 testInFile2=${testInFile1//ontario1/ontario2}
 trainInFile=${testInFile1//r_svm_rbf/r_svm_rbf\/Training_Data}
 

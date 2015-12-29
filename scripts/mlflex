@@ -4,19 +4,22 @@ cd ML-Flex2
 rm -f Log.txt
 
 function runExperiment2 {
-  #java -Xmx2g -jar mlflex.jar ACTION=Reset EXPERIMENT_FILE=$1 NUM_THREADS=6
-  java -Xmx30g -jar mlflex.jar ACTION=Process EXPERIMENT_FILE=$1 NUM_THREADS=6 THREAD_TIMEOUT_MINUTES=6 PAUSE_SECONDS=1 DEBUG=true
+  java -Xmx2g -jar mlflex.jar ACTION=Reset EXPERIMENT_FILE=$1 NUM_THREADS=6
+  java -Xmx10g -jar mlflex.jar ACTION=Process EXPERIMENT_FILE=$1 NUM_THREADS=8 THREAD_TIMEOUT_MINUTES=6 PAUSE_SECONDS=1 DEBUG=false
 }
 
 for i in 1 2
 do
-  #runExperiment2 Experiments/utahontario${i}_Pathways_24vs35.txt
+  runExperiment2 Experiments/utahontario${i}_Pathways_24vs35.txt
+
   runExperiment2 Experiments/utahontario${i}_Pathways_2vs4.txt
-  #runExperiment2 Experiments/utahontario${i}_Pathways_3vs5.txt
-break
+  runExperiment2 Experiments/utahontario${i}_Pathways_3vs5.txt
+
+  runExperiment2 Experiments/utahontario${i}_Pathways_2vs3.txt
+  runExperiment2 Experiments/utahontario${i}_Pathways_4vs5.txt
 done
 
-#runExperiment2 Experiments/Visvader_Pathways.txt
-#runExperiment2 Experiments/Bellacosa_Pathways.txt
+runExperiment2 Experiments/Visvader_Pathways.txt
+runExperiment2 Experiments/Bellacosa_Pathways.txt
 
 cd ..

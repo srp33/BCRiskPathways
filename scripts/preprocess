@@ -36,8 +36,10 @@ sort $tmpFile1 > library/all_pathways.txt
 # Create class files
 python code/CreateClassFile.py clinical/family.txt 0 1 "Control=2,4;BRCACancer=3,5" clinical/classes.24vs35.txt
 python code/CreateClassFile.py clinical/family.txt 0 1 "Control=0,1,2,4;BRCACancer=3,5" clinical/classes.0124vs35.txt
-python code/CreateClassFile.py clinical/family.txt 0 1 "Control=2;BRCA=4" clinical/classes.2vs4.txt
-python code/CreateClassFile.py clinical/family.txt 0 1 "Control=3;BRCA=5" clinical/classes.3vs5.txt
+python code/CreateClassFile.py clinical/family.txt 0 1 "BRCAXControl=2;BRCAControl=4" clinical/classes.2vs4.txt
+python code/CreateClassFile.py clinical/family.txt 0 1 "BRCAXCancer=3;BRCACancer=5" clinical/classes.3vs5.txt
+python code/CreateClassFile.py clinical/family.txt 0 1 "BRCAXControl=2;BRCAXCancer=3" clinical/classes.2vs3.txt
+python code/CreateClassFile.py clinical/family.txt 0 1 "BRCAControl=4;BRCACancer=5" clinical/classes.4vs5.txt
 
 python code/FilterFile.py clinical/classes.24vs35.txt "x[0].startswith('Utah__')" 0 clinical/utah.24vs35.txt
 python code/FilterFile.py clinical/classes.24vs35.txt "x[0].startswith('Ontario__')" 0 clinical/ontario.24vs35.txt
@@ -47,6 +49,10 @@ python code/FilterFile.py clinical/classes.2vs4.txt "x[0].startswith('Utah__')" 
 python code/FilterFile.py clinical/classes.2vs4.txt "x[0].startswith('Ontario__')" 0 clinical/ontario.2vs4.txt
 python code/FilterFile.py clinical/classes.3vs5.txt "x[0].startswith('Utah__')" 0 clinical/utah.3vs5.txt
 python code/FilterFile.py clinical/classes.3vs5.txt "x[0].startswith('Ontario__')" 0 clinical/ontario.3vs5.txt
+python code/FilterFile.py clinical/classes.2vs3.txt "x[0].startswith('Utah__')" 0 clinical/utah.2vs3.txt
+python code/FilterFile.py clinical/classes.2vs3.txt "x[0].startswith('Ontario__')" 0 clinical/ontario.2vs3.txt
+python code/FilterFile.py clinical/classes.4vs5.txt "x[0].startswith('Utah__')" 0 clinical/utah.4vs5.txt
+python code/FilterFile.py clinical/classes.4vs5.txt "x[0].startswith('Ontario__')" 0 clinical/ontario.4vs5.txt
 
 # Create sample files
 rm -f ML-Flex2/Experiments/*samples.txt
@@ -58,6 +64,10 @@ python code/FilterFile.py clinical/family.txt "'Utah__' in x[0] and x[1] in ['2'
 python code/FilterFile.py clinical/family.txt "'Ontario__' in x[0] and x[1] in ['2','4']" 0 ML-Flex2/Experiments/2vs4.test.samples.txt
 python code/FilterFile.py clinical/family.txt "'Utah__' in x[0] and x[1] in ['3','5']" 0 ML-Flex2/Experiments/3vs5.training.samples.txt
 python code/FilterFile.py clinical/family.txt "'Ontario__' in x[0] and x[1] in ['3','5']" 0 ML-Flex2/Experiments/3vs5.test.samples.txt
+python code/FilterFile.py clinical/family.txt "'Utah__' in x[0] and x[1] in ['2','3']" 0 ML-Flex2/Experiments/2vs3.training.samples.txt
+python code/FilterFile.py clinical/family.txt "'Ontario__' in x[0] and x[1] in ['2','3']" 0 ML-Flex2/Experiments/2vs3.test.samples.txt
+python code/FilterFile.py clinical/family.txt "'Utah__' in x[0] and x[1] in ['4','5']" 0 ML-Flex2/Experiments/4vs5.training.samples.txt
+python code/FilterFile.py clinical/family.txt "'Ontario__' in x[0] and x[1] in ['4','5']" 0 ML-Flex2/Experiments/4vs5.test.samples.txt
 for f in ML-Flex2/Experiments/*samples.txt
 do
   python code/SelectColumns.py $f 0 $tmpFile1
@@ -97,8 +107,13 @@ do
   cp $tmpFile1 matrices/utah${validationCohort}.batch.txt
 
   # Create ARFF file for pathway gene sets
+  mkdir -p ML-Flex2/InputData/2vs4 ML-Flex2/InputData/3vs5 ML-Flex2/InputData/2vs3 ML-Flex2/InputData/4vs5
+
   allDataProcessorsText=
-  selectedDataProcessorsText=
+  allDataProcessorsText2vs4=
+  allDataProcessorsText3vs5=
+  allDataProcessorsText2vs3=
+  allDataProcessorsText4vs5=
   for pathwayFile in genesets/*.gene.ids.txt
   do
     pathway=`basename $pathwayFile`
@@ -106,30 +121,45 @@ do
 
     echo Creating ARFF for $pathway for $validationCohort
     scripts/createArffForGeneList matrices/utah${validationCohort}.batch.txt genesets/$pathway.gene.ids.txt clinical/classes.0124vs35.txt ML-Flex2/InputData/utah${validationCohort}.batch.$pathway.arff
+    scripts/createArffForGeneList matrices/utah${validationCohort}.batch.txt genesets/$pathway.gene.ids.txt clinical/classes.2vs4.txt ML-Flex2/InputData/2vs4/utah${validationCohort}.batch.$pathway.arff
+    scripts/createArffForGeneList matrices/utah${validationCohort}.batch.txt genesets/$pathway.gene.ids.txt clinical/classes.3vs5.txt ML-Flex2/InputData/3vs5/utah${validationCohort}.batch.$pathway.arff
+    scripts/createArffForGeneList matrices/utah${validationCohort}.batch.txt genesets/$pathway.gene.ids.txt clinical/classes.2vs3.txt ML-Flex2/InputData/2vs3/utah${validationCohort}.batch.$pathway.arff
+    scripts/createArffForGeneList matrices/utah${validationCohort}.batch.txt genesets/$pathway.gene.ids.txt clinical/classes.4vs5.txt ML-Flex2/InputData/4vs5/utah${validationCohort}.batch.$pathway.arff
 
     dataProcessorText="mlflex.dataprocessors.ArffDataProcessor(\"InputData/utah${validationCohort}.batch.$pathway.arff\")"
+    dataProcessorText2vs4="mlflex.dataprocessors.ArffDataProcessor(\"InputData/2vs4/utah${validationCohort}.batch.$pathway.arff\")"
+    dataProcessorText3vs5="mlflex.dataprocessors.ArffDataProcessor(\"InputData/3vs5/utah${validationCohort}.batch.$pathway.arff\")"
+    dataProcessorText2vs3="mlflex.dataprocessors.ArffDataProcessor(\"InputData/2vs3/utah${validationCohort}.batch.$pathway.arff\")"
+    dataProcessorText4vs5="mlflex.dataprocessors.ArffDataProcessor(\"InputData/4vs5/utah${validationCohort}.batch.$pathway.arff\")"
 
     if [ "$allDataProcessorsText" == "" ]
     then
       allDataProcessorsText="$dataProcessorText"
+      allDataProcessorsText2vs4="$dataProcessorText2vs4"
+      allDataProcessorsText3vs5="$dataProcessorText3vs5"
+      allDataProcessorsText2vs3="$dataProcessorText2vs3"
+      allDataProcessorsText4vs5="$dataProcessorText4vs5"
     else
       allDataProcessorsText="$allDataProcessorsText;$dataProcessorText"
-    fi
-
-    if [ "$(python code/FileContainsText.py Results/UtahOntario_Top_Pathways_24vs35.txt $pathway)" == "True" ]
-    then
-      if [ "$selectedDataProcessorsText" == "" ]
-      then
-        selectedDataProcessorsText="$dataProcessorText"
-      else
-        selectedDataProcessorsText="$selectedDataProcessorsText;$dataProcessorText"
-      fi
+      allDataProcessorsText2vs4="$allDataProcessorsText2vs4;$dataProcessorText2vs4"
+      allDataProcessorsText3vs5="$allDataProcessorsText3vs5;$dataProcessorText3vs5"
+      allDataProcessorsText2vs3="$allDataProcessorsText2vs3;$dataProcessorText2vs3"
+      allDataProcessorsText4vs5="$allDataProcessorsText4vs5;$dataProcessorText4vs5"
     fi
   done
 
-  python code/ReplaceText.py ML-Flex2/Experiments/Pathways_24vs35_Template.txt "{processors}" "$allDataProcessorsText" ML-Flex2/Experiments/utah${validationCohort}_Pathways_24vs35.txt
-  python code/ReplaceText.py ML-Flex2/Experiments/Pathways_2vs4_Template.txt "{processors}" "$selectedDataProcessorsText" ML-Flex2/Experiments/utah${validationCohort}_Pathways_2vs4.txt
-  python code/ReplaceText.py ML-Flex2/Experiments/Pathways_3vs5_Template.txt "{processors}" "$selectedDataProcessorsText" ML-Flex2/Experiments/utah${validationCohort}_Pathways_3vs5.txt
+  comparison=24vs35
+  python code/ReplaceText.py ML-Flex2/Experiments/Pathways_Template.txt "{processors}" "$allDataProcessorsText" ML-Flex2/Experiments/utah${validationCohort}_Pathways_24vs35.txt
+  python code/ReplaceText.py ML-Flex2/Experiments/utah${validationCohort}_Pathways_24vs35.txt "{comparison}" "$comparison" ML-Flex2/Experiments/utah${validationCohort}_Pathways_24vs35.txt
+
+  python code/ReplaceText.py ML-Flex2/Experiments/Pathways_Template.txt "{processors}" "$allDataProcessorsText2vs4" ML-Flex2/Experiments/utah${validationCohort}_Pathways_2vs4.txt
+  python code/ReplaceText.py ML-Flex2/Experiments/utah${validationCohort}_Pathways_2vs4.txt "{comparison}" "2vs4" ML-Flex2/Experiments/utah${validationCohort}_Pathways_2vs4.txt
+  python code/ReplaceText.py ML-Flex2/Experiments/Pathways_Template.txt "{processors}" "$allDataProcessorsText3vs5" ML-Flex2/Experiments/utah${validationCohort}_Pathways_3vs5.txt
+  python code/ReplaceText.py ML-Flex2/Experiments/utah${validationCohort}_Pathways_3vs5.txt "{comparison}" "3vs5" ML-Flex2/Experiments/utah${validationCohort}_Pathways_3vs5.txt
+  python code/ReplaceText.py ML-Flex2/Experiments/Pathways_Template.txt "{processors}" "$allDataProcessorsText2vs3" ML-Flex2/Experiments/utah${validationCohort}_Pathways_2vs3.txt
+  python code/ReplaceText.py ML-Flex2/Experiments/utah${validationCohort}_Pathways_2vs3.txt "{comparison}" "2vs3" ML-Flex2/Experiments/utah${validationCohort}_Pathways_2vs3.txt
+  python code/ReplaceText.py ML-Flex2/Experiments/Pathways_Template.txt "{processors}" "$allDataProcessorsText4vs5" ML-Flex2/Experiments/utah${validationCohort}_Pathways_4vs5.txt
+  python code/ReplaceText.py ML-Flex2/Experiments/utah${validationCohort}_Pathways_4vs5.txt "{comparison}" "4vs5" ML-Flex2/Experiments/utah${validationCohort}_Pathways_4vs5.txt
 done
 
 # Build Arff files for Lim, et al. (Visvader)

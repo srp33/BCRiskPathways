@@ -11,26 +11,26 @@ gmtFiles=library/all_pathways.gmt
 entrezGenesFile=$outputDir/EntrezGenes.txt
 
 source scripts/create_temp_files
-#scripts/exome2/calculate_mutfreq_stats $outputDir/Variants_Minus_TCGA_Genes.txt $entrezGenesFile $entrezGeneSymbolsFile $gmtFiles $outputDir/Samples.Family3.txt $outputDir/Samples.Family5.txt BRCAXCancer BRCA12Cancer $outputDir/Gene.MutFreq.Stats.Families3vs5.txt $outputDir/Pathway.MutFreq.Stats.Families3vs5.txt False
-#scripts/exome2/calculate_mutfreq_stats $outputDir/Variants_Minus_TCGA_Genes.txt $entrezGenesFile $entrezGeneSymbolsFile $gmtFiles $outputDir/Samples.Family5.txt $outputDir/Samples.Family3.txt BRCA12Cancer BRCAXCancer $outputDir/Gene.MutFreq.Stats.Families5vs3.txt $outputDir/Pathway.MutFreq.Stats.Families5vs3.txt False
-ls -al $outputDir/Gene.MutFreq.Stats.Families?vs?.txt $outputDir/Pathway.MutFreq.Stats.Families?vs?.txt
-exit
 
 scripts/exome/parse_meta_files
 python2 code/SelectColumns.py $entrezGenePositionsFile 0 $entrezGenesFile
 
-controlSamplesFile=$outputDir/ControlSamples.txt
-cancerSamplesFile=$outputDir/CancerSamples.txt
+python2 code/FilterFile.py $sampleMapFile "x[2] in ('2','3','4','5')" 0 $tmpFile1
+python2 code/SelectColumns.py $tmpFile1 3 $outputDir/Exome.Samples.txt
 
 python2 code/FilterFile.py $sampleMapFile "x[2] in ('2','4')" 0 $tmpFile1
-python2 code/SelectColumns.py $tmpFile1 3 $controlSamplesFile
+python2 code/SelectColumns.py $tmpFile1 3 $outputDir/Exome.Samples.Family24.txt
 python2 code/FilterFile.py $sampleMapFile "x[2] in ('3','5')" 0 $tmpFile1
-python2 code/SelectColumns.py $tmpFile1 3 $cancerSamplesFile
+python2 code/SelectColumns.py $tmpFile1 3 $outputDir/Exome.Samples.Family35.txt
+python2 code/FilterFile.py $sampleMapFile "x[2] in ('2','3')" 0 $tmpFile1
+python2 code/SelectColumns.py $tmpFile1 3 $outputDir/Exome.Samples.Family23.txt
+python2 code/FilterFile.py $sampleMapFile "x[2] in ('4','5')" 0 $tmpFile1
+python2 code/SelectColumns.py $tmpFile1 3 $outputDir/Exome.Samples.Family45.txt
 
 for x in 2 3 4 5
 do
   python2 code/FilterFile.py $sampleMapFile "x[2] in ('${x}')" 0 $tmpFile1
-  python2 code/SelectColumns.py $tmpFile1 3 $outputDir/Samples.Family${x}.txt
+  python2 code/SelectColumns.py $tmpFile1 3 $outputDir/Exome.Samples.Family${x}.txt
 done
 
 # Find samples that need to be processed
@@ -126,8 +126,17 @@ tail -n +2 $tmpFile4 > $tmpFile3
 python2 code/Uniquify.py $tmpFile3
 python2 code/FilterFileByColumnValues.py $outputDir/Variants.txt 6 $tmpFile3 1 $outputDir/Variants_Minus_TCGA_Genes.txt
 
-scripts/exome2/calculate_mutfreq_stats $outputDir/Variants_Minus_TCGA_Genes.txt $entrezGenesFile $entrezGeneSymbolsFile $gmtFiles $controlSamplesFile $cancerSamplesFile UtahControl UtahCancer $outputDir/Gene.MutFreq.Stats.txt $outputDir/Pathway.MutFreq.Stats.txt False
-scripts/exome2/calculate_mutfreq_stats $outputDir/Variants_Minus_TCGA_Genes.txt $entrezGenesFile $entrezGeneSymbolsFile $gmtFiles $outputDir/Samples.Family3.txt $outputDir/Samples.Family5.txt UtahBRCAControl UtahBRCACancer $outputDir/Gene.MutFreq.Stats.Families3vs5.txt $outputDir/Pathway.MutFreq.Stats.Families3vs5.txt False
+scripts/exome2/calculate_mutfreq_stats $outputDir/Variants_Minus_TCGA_Genes.txt $entrezGenesFile $entrezGeneSymbolsFile $gmtFiles $outputDir/Exome.Samples.Family24.txt $outputDir/Exome.Samples.Family35.txt UtahControl UtahCancer $outputDir/Gene.MutFreq.Stats.Families24vs35.txt $outputDir/Pathway.MutFreq.Stats.Families24vs35.txt False
+scripts/exome2/calculate_mutfreq_stats $outputDir/Variants_Minus_TCGA_Genes.txt $entrezGenesFile $entrezGeneSymbolsFile $gmtFiles $outputDir/Exome.Samples.Family2.txt $outputDir/Exome.Samples.Family4.txt BRCAXControl BRCAControl $outputDir/Gene.MutFreq.Stats.Families2vs4.txt $outputDir/Pathway.MutFreq.Stats.Families2vs4.txt False
+scripts/exome2/calculate_mutfreq_stats $outputDir/Variants_Minus_TCGA_Genes.txt $entrezGenesFile $entrezGeneSymbolsFile $gmtFiles $outputDir/Exome.Samples.Family4.txt $outputDir/Exome.Samples.Family2.txt BRCAControl BRCAXControl $outputDir/Gene.MutFreq.Stats.Families4vs2.txt $outputDir/Pathway.MutFreq.Stats.Families4vs2.txt False
+scripts/exome2/calculate_mutfreq_stats $outputDir/Variants_Minus_TCGA_Genes.txt $entrezGenesFile $entrezGeneSymbolsFile $gmtFiles $outputDir/Exome.Samples.Family3.txt $outputDir/Exome.Samples.Family5.txt BRCAXCancer BRCACancer $outputDir/Gene.MutFreq.Stats.Families3vs5.txt $outputDir/Pathway.MutFreq.Stats.Families3vs5.txt False
+scripts/exome2/calculate_mutfreq_stats $outputDir/Variants_Minus_TCGA_Genes.txt $entrezGenesFile $entrezGeneSymbolsFile $gmtFiles $outputDir/Exome.Samples.Family5.txt $outputDir/Exome.Samples.Family3.txt BRCACancer BRCAXCancer $outputDir/Gene.MutFreq.Stats.Families5vs3.txt $outputDir/Pathway.MutFreq.Stats.Families5vs3.txt False
+scripts/exome2/calculate_mutfreq_stats $outputDir/Variants_Minus_TCGA_Genes.txt $entrezGenesFile $entrezGeneSymbolsFile $gmtFiles $outputDir/Exome.Samples.Family2.txt $outputDir/Exome.Samples.Family3.txt BRCAXControl BRCAXCancer $outputDir/Gene.MutFreq.Stats.Families2vs3.txt $outputDir/Pathway.MutFreq.Stats.Families2vs3.txt False
+scripts/exome2/calculate_mutfreq_stats $outputDir/Variants_Minus_TCGA_Genes.txt $entrezGenesFile $entrezGeneSymbolsFile $gmtFiles $outputDir/Exome.Samples.Family3.txt $outputDir/Exome.Samples.Family2.txt BRCAXCancer BRCAXControl $outputDir/Gene.MutFreq.Stats.Families3vs2.txt $outputDir/Pathway.MutFreq.Stats.Families3vs2.txt False
+scripts/exome2/calculate_mutfreq_stats $outputDir/Variants_Minus_TCGA_Genes.txt $entrezGenesFile $entrezGeneSymbolsFile $gmtFiles $outputDir/Exome.Samples.Family4.txt $outputDir/Exome.Samples.Family5.txt BRCAControl BRCACancer $outputDir/Gene.MutFreq.Stats.Families4vs5.txt $outputDir/Pathway.MutFreq.Stats.Families4vs5.txt False
+scripts/exome2/calculate_mutfreq_stats $outputDir/Variants_Minus_TCGA_Genes.txt $entrezGenesFile $entrezGeneSymbolsFile $gmtFiles $outputDir/Exome.Samples.Family5.txt $outputDir/Exome.Samples.Family4.txt BRCACancer BRCAControl $outputDir/Gene.MutFreq.Stats.Families5vs4.txt $outputDir/Pathway.MutFreq.Stats.Families5vs4.txt False
+scripts/exome2/calculate_mutfreq_stats $outputDir/Variants_Minus_TCGA_Genes.txt $entrezGenesFile $entrezGeneSymbolsFile $gmtFiles $outputDir/Exome.Samples.Family23.txt $outputDir/Exome.Samples.Family45.txt BRCAX BRCA $outputDir/Gene.MutFreq.Stats.Families23vs45.txt $outputDir/Pathway.MutFreq.Stats.Families23vs45.txt False
+scripts/exome2/calculate_mutfreq_stats $outputDir/Variants_Minus_TCGA_Genes.txt $entrezGenesFile $entrezGeneSymbolsFile $gmtFiles $outputDir/Exome.Samples.Family45.txt $outputDir/Exome.Samples.Family23.txt BRCA BRCAX $outputDir/Gene.MutFreq.Stats.Families45vs23.txt $outputDir/Pathway.MutFreq.Stats.Families45vs23.txt False
 
 ## Number of genes and pathways with at least one variant after gene-level filtering
 python2 code/PrintVariantStats.py $outputDir/Variants_Minus_TCGA_Genes.txt | tee $outputDir/VariantStats_Minus_TCGA_Genes.txt

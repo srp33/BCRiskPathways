@@ -10,8 +10,8 @@ permutedAucFile=${predictionsFile/Predictions/PermutedAUCs}
 
 echo $predictionsFile
 
-if [ ! -f $permutedAucFile ]
-then
+#if [ ! -f $permutedAucFile ]
+#then
   mkdir -p `dirname $aucFile` `dirname $permutedAucFile`
   Rscript --vanilla code/CalculatePredictionMetrics.R $predictionsFile $targetClass 1000 $aucFile $permutedAucFile
-fi
+#fi

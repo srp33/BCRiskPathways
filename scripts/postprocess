@@ -6,15 +6,13 @@ source scripts/create_temp_files
 # Parse "pathway" results
 ###############################################################
 
-#for comparison in 24vs35 0124vs35
-#do
-#  for pathway in `cat library/all_pathways.txt`
-#  do
-#    echo scripts/postprocess_parsePredictionFiles Pathways $pathway $comparison >> $tmpFile1
-#  done
-#done
-#chmod 777 $tmpFile1
-#parallel --max-procs 50 -a $tmpFile1
+for comparison in 24vs35 2vs4 3vs5 2vs3 4vs5
+do
+  for pathway in `cat library/all_pathways.txt`
+  do
+    scripts/postprocess_parsePredictionFiles Pathways $pathway $comparison
+  done
+done
 
 function parseLoocvPredictions {
   dataSet=$1
@@ -38,35 +36,49 @@ function parseLoocvPredictions {
   done
 }
 
-#parseLoocvPredictions Visvader
-#parseLoocvPredictions Bellacosa
+parseLoocvPredictions Visvader
+parseLoocvPredictions Bellacosa
 
 #################################################################
 # Build prediction matrices
 #################################################################
 
-#for descriptionDir in ML-Flex_Results/24vs35
-#do
-#  cohortDir=$descriptionDir/Pathways/All/Predictions
-#
-#  outFile=${cohortDir//\//__}__Predicted__Probabilities.txt
-#  outFile=${outFile/All__Predictions__/}
-#  outFile=${outFile/__/\/}
-#  outFile=${outFile//__/_}
-#
-#  python code/BuildPredictionMatrix.py "$cohortDir/*" $outFile
-#done
+for comparison in 24vs35 2vs4 3vs5 2vs3 4vs5
+do
+  cohortDir=ML-Flex_Results/$comparison/Pathways/All/Predictions
+
+  outFile=${cohortDir//\//__}__Predicted__Probabilities.txt
+  outFile=${outFile/All__Predictions__/}
+  outFile=${outFile/__/\/}
+  outFile=${outFile//__/_}
+
+  python code/BuildPredictionMatrix.py "$cohortDir/*" $outFile
+done
 
 #################################################################
 # Calculate prediction metrics
 #################################################################
 
-function calculateMetrics {
-  rm -f $tmpFile1
-  for f in ML-Flex_Results/*/*/UtahTraining/Predictions/* ML-Flex_Results/*/*/OntarioTesting/Predictions/* ML-Flex_Results/*/*/AllTesting/Predictions/*
+function calculateMetricsForComparison {
+  comparison=$1
+  targetClass=$2
+
+  rm -f /tmp/$comparison
+  for f in ML-Flex_Results/$comparison/*/UtahTraining/Predictions/* ML-Flex_Results/$comparison/*/OntarioTesting/Predictions/* ML-Flex_Results/$comparison/*/AllTesting/Predictions/*
   do
-    echo scripts/postprocess_calculateMetrics $f BRCACancer >> $tmpFile1
+    echo "scripts/postprocess_calculateMetrics $f $targetClass" >> /tmp/$comparison
   done
+
+  chmod 777 /tmp/$comparison
+  parallel --max-procs 50 -a /tmp/$comparison
+}
+
+function calculateMetrics {
+  calculateMetricsForComparison 24vs35 BRCACancer
+  calculateMetricsForComparison 2vs4 BRCAControl
+  calculateMetricsForComparison 3vs5 BRCACancer
+  calculateMetricsForComparison 2vs3 BRCAXCancer
+  calculateMetricsForComparison 4vs5 BRCACancer
 
   for f in ML-Flex_Results/CrossValidation/Pathways/*/Predictions/*
   do
@@ -90,7 +102,7 @@ function calculateMetrics {
   python code/SortFileByExpression.py $tmpFile1 "float(x[1])" forward 0 ML-Flex_Results/24vs35/Pathways/AllTesting/ControlTest24.txt
 }
 
-#calculateMetrics
+calculateMetrics
 
 function combineMetrics {
   for metric in AUCs PermutedAUCs
@@ -108,39 +120,66 @@ function combineMetrics {
   done
 }
 
-#combineMetrics
+combineMetrics
 
 function summarizeMetrics {
-  for metric in AUCs PermutedAUCs
+  for comparison in 24vs35 2vs4 3vs5 2vs3 4vs5
   do
-    summaryFile=ML-Flex_Results/${metric}_Summary.txt
+    summaryFile=Results/${comparison}_Summary.txt
 
-    cp ML-Flex_Results/24vs35/Pathways/UtahTraining/$metric.txt $tmpFile1
-    python code/MergeMatrixOnRowNames.py $tmpFile1 ML-Flex_Results/24vs35/Pathways/OntarioTesting/$metric.txt $tmpFile2 False
-    python code/MergeMatrixOnRowNames.py $tmpFile2 ML-Flex_Results/0124vs35/Pathways/UtahTraining/$metric.txt $tmpFile1 False
-    python code/MergeMatrixOnRowNames.py $tmpFile1 ML-Flex_Results/0124vs35/Pathways/OntarioTesting/$metric.txt $tmpFile2 False
-    python code/MergeMatrixOnRowNames.py $tmpFile2 ML-Flex_Results/CrossValidation/Pathways/Visvader/$metric.txt $tmpFile1 False
-    python code/MergeMatrixOnRowNames.py $tmpFile1 ML-Flex_Results/CrossValidation/Pathways/Bellacosa/$metric.txt $tmpFile2 False
+    if [ ! -f $summaryFile ]
+    then
+      cp ML-Flex_Results/$comparison/Pathways/UtahTraining/AUCs.txt $tmpFile1
+      cp ML-Flex_Results/$comparison/Pathways/OntarioTesting/AUCs.txt $tmpFile2
+      cp ML-Flex_Results/$comparison/Pathways/UtahTraining/PermutedAUCs.txt $tmpFile3
+      cp ML-Flex_Results/$comparison/Pathways/OntarioTesting/PermutedAUCs.txt $tmpFile4
 
-    echo -e "Pathway\tUtah Expression 24vs35 $metric\tOntario Expression 24vs35 $metric\tUtah Expression 0124vs35 $metric\tOntario Expression 0124vs35 $metric\tLim $metric\tBellacosa Breast $metric" > $tmpFile1
-    cat $tmpFile1 $tmpFile2 > $summaryFile
+      python code/SelectColumnsByName.py UtahExomeData/Output2/Pathway.MutFreq.Stats.Families${comparison}.txt "Row.names,Exact_P" $tmpFile5
+
+      python code/MergeMatrixOnRowNames.py $tmpFile1 $tmpFile2 $tmpFile6 False
+      python code/MergeMatrixOnRowNames.py $tmpFile6 $tmpFile3 $tmpFile7 False
+      python code/MergeMatrixOnRowNames.py $tmpFile7 $tmpFile4 $tmpFile6 False
+      python code/MergeMatrixOnRowNames.py $tmpFile6 $tmpFile5 $tmpFile7 False
+
+      echo -e "Pathway\tUtah RNA AUC\tOntario RNA AUC\tUtah RNA p-value\tOntario RNA p-value\tUtah DNA p-value" > $tmpFile1
+      cat $tmpFile1 $tmpFile7 > $summaryFile
+
+      for i in {1..5}
+      do
+        python code/RoundMatrixColumn.py $summaryFile 1 $i 3 $summaryFile f
+      done
+    fi
   done
 
-  echo -e "Pathway\tNumControlNonMut\tNumControlMut\tNumCancerNonMut\tNumCancerMut\tUtah Exome 24vs35" > $tmpFile1
-  python code/SelectColumns.py UtahExomeData/Output/Pathway.MutFreq.Stats.txt 0,2,3,4,5,-1 $tmpFile2
-  tail -n +2 $tmpFile2 > $tmpFile3
-  cat $tmpFile1 $tmpFile3 > $tmpFile2
+  summaryFile=Results/BreastTissue_Summary.txt
 
-  python code/MergeMatrixOnRowNames.py ML-Flex_Results/AUCs_Summary.txt ML-Flex_Results/PermutedAUCs_Summary.txt $tmpFile1
-  python code/MergeMatrixOnRowNames.py $tmpFile1 $tmpFile2 $tmpFile3
+  if [ ! -f $summaryFile ]
+  then
+    cp ML-Flex_Results/CrossValidation/Pathways/Visvader/AUCs.txt $tmpFile1
+    cp ML-Flex_Results/CrossValidation/Pathways/Bellacosa/AUCs.txt $tmpFile2
+    cp ML-Flex_Results/CrossValidation/Pathways/Visvader/PermutedAUCs.txt $tmpFile3
+    cp ML-Flex_Results/CrossValidation/Pathways/Bellacosa/PermutedAUCs.txt $tmpFile4
 
-  Rscript --vanilla code/AddCombinedP.R $tmpFile3 7,8,17 TRUE $tmpFile1
-  Rscript --vanilla code/AddCombinedP.R $tmpFile1 7,8,17,11,12 TRUE $tmpFile2
-  Results/Overall_Pathway_Summary.txt
+    python code/MergeMatrixOnRowNames.py $tmpFile1 $tmpFile2 $tmpFile5 False
+    python code/MergeMatrixOnRowNames.py $tmpFile5 $tmpFile3 $tmpFile6 False
+    python code/MergeMatrixOnRowNames.py $tmpFile6 $tmpFile4 $tmpFile5 False
+
+    echo -e "Pathway\tLim, et al. AUC\tBellacosa, et al. AUC\tLim, et al. p-value\tBellacosa, et al. p-value" > $tmpFile1
+    cat $tmpFile1 $tmpFile5 > $summaryFile
+
+    for i in {1..4}
+    do
+      python code/RoundMatrixColumn.py $summaryFile 1 $i 3 $summaryFile f
+    done
+  fi
 }
 
 summarizeMetrics
 exit
+
+################################################
+# I don't think we used any of the following...
+################################################
 
 function identifySelectedGenes2 {
   selectedGenesDir=ML-Flex_Results/24vs35/Pathways/UtahTraining/SelectedGenes
@@ -167,7 +206,7 @@ function identifySelectedGenes2 {
   python code/MergeGeneIDFilesIntoGmt.py "$selectedGenesDir/*" ML-Flex_Results/Pathways_24vs35_SelectedGenes.gmt
 }
 
-identifySelectedGenes2
+#identifySelectedGenes2
 
 function buildGeneStatsFile {
   statsFile=Results/Gene.Expression.Stats.txt
@@ -225,7 +264,7 @@ function buildGeneStatsFile {
   cat $tmpFile2 $tmpFile1 > $statsFile
 }
 
-buildGeneStatsFile
+#buildGeneStatsFile
 
 function consensusGenes {
   comparison=$1
@@ -265,27 +304,27 @@ function consensusGenes {
   tail -n +2 $tmpFile1 > $consensusGenesIDFile
 }
 
-consensusGenes 24v35 3 4 5 6 7 8
-consensusGenes 0124v35 9 10 11 12 13 14
+#consensusGenes 24v35 3 4 5 6 7 8
+#consensusGenes 0124v35 9 10 11 12 13 14
 
-python code/FilterFile.py Results/Gene.Expression.Stats.txt "x[12] != 'NA' and x[13] != 'NA' and x[14] != 'NA'" 1 $tmpFile2
-python code/InsertRankColumn.py $tmpFile2 True 12 True $tmpFile2
-python code/InsertRankColumn.py $tmpFile2 True 13 True $tmpFile2
-python code/InsertRankColumn.py $tmpFile2 True 14 True $tmpFile2
-python code/SortFileByExpression.py $tmpFile2 "utilities.calculateMean([float(y) for y in x[19:]])" forward 1 $tmpFile1
-python code/SelectColumns.py $tmpFile1 0 $tmpFile2
-tail -n +2 $tmpFile2 > $tmpFile1
-head -n 250 $tmpFile1 > Results/BCSP.Up.Gene.ID.0124vs35.txt
-python code/CreateGmtFileFromIDs.py Results/BCSP.Up.Gene.ID.0124vs35.txt Results/BCSP.Up.0124vs35.gmt
+#python code/FilterFile.py Results/Gene.Expression.Stats.txt "x[12] != 'NA' and x[13] != 'NA' and x[14] != 'NA'" 1 $tmpFile2
+#python code/InsertRankColumn.py $tmpFile2 True 12 True $tmpFile2
+#python code/InsertRankColumn.py $tmpFile2 True 13 True $tmpFile2
+#python code/InsertRankColumn.py $tmpFile2 True 14 True $tmpFile2
+#python code/SortFileByExpression.py $tmpFile2 "utilities.calculateMean([float(y) for y in x[19:]])" forward 1 $tmpFile1
+#python code/SelectColumns.py $tmpFile1 0 $tmpFile2
+#tail -n +2 $tmpFile2 > $tmpFile1
+#head -n 250 $tmpFile1 > Results/BCSP.Up.Gene.ID.0124vs35.txt
+#python code/CreateGmtFileFromIDs.py Results/BCSP.Up.Gene.ID.0124vs35.txt Results/BCSP.Up.0124vs35.gmt
 
 # Create expression file that includes all samples
-python code/SelectColumns.py clinical/classes.0124vs35.txt 0 $tmpFile2
-python code/TransposeData.py matrices/utahontario1.batch.txt $tmpFile3
-python code/FilterFileByColumnValues.py $tmpFile3 0 $tmpFile2 1 $tmpFile4
-python code/TransposeData.py $tmpFile4 $tmpFile5
-python code/SelectColumns.py clinical/ontario.0124vs35.txt 0 $tmpFile2
-python code/TransposeData.py matrices/utahontario2.batch.txt $tmpFile3
-python code/FilterFileByColumnValues.py $tmpFile3 0 $tmpFile2 1 $tmpFile4
-python code/TransposeData.py $tmpFile4 $tmpFile6
-python code/MergeMatrixOnRowNames.py $tmpFile5 $tmpFile6 matrices/utahontario.batch.txt
-python code/PrintMatrixDimensions.py matrices/utahontario.batch.txt
+#python code/SelectColumns.py clinical/classes.0124vs35.txt 0 $tmpFile2
+#python code/TransposeData.py matrices/utahontario1.batch.txt $tmpFile3
+#python code/FilterFileByColumnValues.py $tmpFile3 0 $tmpFile2 1 $tmpFile4
+#python code/TransposeData.py $tmpFile4 $tmpFile5
+#python code/SelectColumns.py clinical/ontario.0124vs35.txt 0 $tmpFile2
+#python code/TransposeData.py matrices/utahontario2.batch.txt $tmpFile3
+#python code/FilterFileByColumnValues.py $tmpFile3 0 $tmpFile2 1 $tmpFile4
+#python code/TransposeData.py $tmpFile4 $tmpFile6
+#python code/MergeMatrixOnRowNames.py $tmpFile5 $tmpFile6 matrices/utahontario.batch.txt
+#python code/PrintMatrixDimensions.py matrices/utahontario.batch.txt
